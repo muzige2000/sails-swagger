@@ -106,7 +106,7 @@ var Transformer = {
     getDefinitions: function getDefinitions(sails) {
         var definitions = _lodash2['default'].transform(sails.models, function (definitions, model, modelName) {
             definitions[model.identity] = {
-                properties: Transformer.getDefinitionProperties(model.definition)
+                properties: Transformer.getDefinitionProperties(model.attributes)
             };
         });
 
@@ -116,11 +116,12 @@ var Transformer = {
     },
 
     getDefinitionProperties: function getDefinitionProperties(definition) {
-
         return _lodash2['default'].mapValues(definition, function (def, attrName) {
-            var property = _lodash2['default'].pick(def, ['type', 'description', 'format', 'model']);
-
-            return property.model && sails.config.blueprints.populate ? { '$ref': Transformer.generateDefinitionReference(property.model) } : _spec2['default'].getPropertyType(property.type);
+            return {
+                type: def.type,
+                required: def.required,
+                description: def.description
+            };
         });
     },
 
@@ -131,10 +132,18 @@ var Transformer = {
      * http://swagger.io/specification/#pathItemObject
      */
     getPaths: function getPaths(sails) {
-        var routes = sails.router._privateRouter.routes;
-        var pathGroups = _lodash2['default'].chain(routes).values().flatten().unique(function (route) {
-            return route.path + route.method + JSON.stringify(route.keys);
-        }).reject({ path: '/*' }).reject({ path: '/__getcookie' }).reject({ path: '/csrfToken' }).reject({ path: '/csrftoken' }).groupBy('path').value();
+        var routes = sails.router._privateRouter.stack;
+        var pathGroups = _lodash2['default'].chain(routes).map(function (route) {
+            if (!route.route.stack[0].method) {
+                return;
+            }
+
+            return {
+                path: route.route.path,
+                method: route.route.stack[0].method,
+                keys: route.route.stack[0].keys
+            };
+        }).compact().reject({ path: '/swagger/doc' }).reject({ path: '/*' }).reject({ path: '/__getcookie' }).reject({ path: '/csrfToken' }).reject({ path: '/csrftoken' }).groupBy('path').value();
 
         pathGroups = _lodash2['default'].reduce(pathGroups, function (result, routes, path) {
             path = path.replace(/:(\w+)\??/g, '{$1}');
