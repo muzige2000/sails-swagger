@@ -134,7 +134,7 @@ var Transformer = {
     getPaths: function getPaths(sails) {
         var routes = sails.router._privateRouter.stack;
         var pathGroups = _lodash2['default'].chain(routes).map(function (route) {
-            if (!route.route.stack[0].method) {
+            if (!route.route.stack || !route.route.stack[0].method) {
                 return;
             }
 
