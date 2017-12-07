@@ -65,6 +65,7 @@ var Transformer = {
             swagger: '2.0',
             info: Transformer.getInfo(pkg),
             host: sails.config.swagger.host,
+            basePath: sails.config.swagger.basePath,
             tags: Transformer.getTags(sails),
             definitions: Transformer.getDefinitions(sails),
             paths: Transformer.getPaths(sails)
